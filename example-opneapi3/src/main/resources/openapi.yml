@@ -1,0 +1,279 @@
+openapi: 3.0.0
+info:
+  title: openapi rest
+  version: '1.0'
+  description: Message Router API
+servers:
+  - url: '{protocol}://{host}:{port}/{basePath}'
+    description: The localhost API server
+    variables:
+      protocol:
+        default: http
+      host:
+        default: localhost
+      port:
+        default: '9191'
+      basePath:
+        default: message
+paths:
+  /v1/exampleproject/backupmessage:
+    get:
+      summary: get back up messages
+      tags:
+        - exampleproject
+      operationId: get-backup-messages
+      description: get messages from backup mongo collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupMessagesResponse'
+              examples:
+                example-1:
+                  value:
+                    message:
+                      - objectId: string
+                        warehouseId: string
+                        compressionType: string
+                        content: string
+                        date: string
+                        errorType: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unathorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: warehouseId
+        - schema:
+            type: string
+          in: query
+          name: content
+    parameters: []
+  /v1/exampleproject/errormessage:
+    get:
+      summary: get error messages
+      tags:
+        - exampleproject
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessagesResponse'
+              examples:
+                example-1:
+                  value:
+                    objectId: string
+                    warehouseId: string
+                    compressionType: string
+                    content: string
+                    date: string
+                    errorType: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unathorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      operationId: get-error-messages
+      description: get messages from error mongo collection
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: warehouseId
+        - schema:
+            type: string
+          in: query
+          name: content
+    parameters: []
+  /v1/exampleproject/resendmessage:
+    post:
+      summary: Re sent a message
+      operationId: post-resend-messages
+      description: Endpoint for resend error messages
+      tags:
+        - exampleproject
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unathorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      parameters: []
+      requestBody:
+        $ref: '#/components/requestBodies/ReSendMessagesRequest'
+  '/v1/exampleproject/deletemessage/{objectId}':
+    delete:
+      summary: Delete Message
+      operationId: delete-error-message
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - exampleproject
+      description: API for delete a message in the error collection.
+    parameters:
+      - schema:
+          type: string
+        name: objectId
+        in: path
+        required: true
+components:
+  schemas:
+    Message:
+      description: ''
+      type: object
+      x-examples:
+        message-example:
+          objectId: string
+          warehouseId: string
+          compressionType: string
+          content: string
+          date: string
+          errorType: string
+      properties:
+        objectId:
+          type: string
+        warehouseId:
+          type: string
+          minLength: 1
+        compressionType:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        date:
+          type: string
+        errorType:
+          type: string
+          minLength: 0
+      required:
+        - objectId
+        - warehouseId
+        - compressionType
+        - content
+        - date
+    BackupMessagesResponse:
+      title: backupMessagesResponse
+      type: object
+      x-examples:
+        example-1:
+          message:
+            - objectId: string
+              warehouseId: string
+              compressionType: string
+              content: string
+              date: string
+              errorType: string
+      properties:
+        message:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    ErrorMessagesResponse:
+      title: errorMessagesResponse
+      type: object
+      properties:
+        message:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    ReSendMessagesRequest:
+      title: reSentMessagesRequest
+      type: object
+      x-examples:
+        example-1:
+          messages:
+            - objectId: string
+              warehouseId: string
+              compressionType: string
+              content: string
+              date: string
+              errorType: string
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    Error:
+      title: Error
+      type: object
+      properties:
+        code:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
+  securitySchemes:
+    itxBearerAuth:
+      type: http
+      scheme: bearer
+  responses:
+    BadRequest:
+      description: It is returned when one or more parameters are not valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: It is returned when user does not have enough permissions to access this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: It is returned when an internal error ocurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unathorized:
+      description: It is returned when authentication header is not valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: It is returned when not found the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  requestBodies:
+    ReSendMessagesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReSendMessagesRequest'
+tags:
+  - name: exampleproject
+security:
+  - itxBearerAuth: []
